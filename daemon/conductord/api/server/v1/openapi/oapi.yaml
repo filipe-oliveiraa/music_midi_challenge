@@ -1,0 +1,288 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Conductor Http Specification
+  description: Specification of the Conductor Http API
+paths:
+  /swagger:
+    get:
+      summary: Gets Swagger Spec
+      operationId: swagger
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+          content:
+            text/html:
+              schema:
+                type: string
+        default:
+          description: unexpected error
+          content:
+            text/html:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /health:
+    get:
+      summary: Verify Healthiness
+      operationId: health
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /startup:
+    get:
+      summary: Verify Startup
+      operationId: startup
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /ready:
+    get:
+      summary: Verify Readiness
+      operationId: ready
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+        "500":
+          description: Internal Error.
+        "503":
+          description: Node not ready yet.
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /info:
+    get:
+      summary: Get Info
+      description: |
+        TODO
+      operationId: info
+      tags:
+        - common
+      responses:
+        "200":
+          description: info response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InfoResponse"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /metrics:
+    get:
+      summary: Return Metrics
+      description: |
+        Return Conductor metrics
+      operationId: metrics
+      tags:
+        - common
+      responses:
+        "200":
+          description: text with \#-comments and key:value lines
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: metrics were compiled out
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/musician:
+    post:
+      summary: Register a musician
+      description: |
+        Register a musician
+      operationId: registerMusician
+      tags:
+        - v1
+      requestBody:
+        description: Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Musician"
+      responses:
+        "200":
+          description: Musician Added
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: metrics were compiled out
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/musician/{id}:
+    delete:
+      summary: Unregister a Musician
+      description: |
+        Unregister a Musician
+      operationId: unregisterMusician
+      parameters:
+        - in: path
+          name: id
+          description: id of the musician
+          schema:
+            type: string
+          required: true
+      tags:
+        - v1
+      responses:
+        "200":
+          description: Ok. Deleted Musician.
+        "404":
+          description: Chunk not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/music/play/{name}:
+    post:
+      summary: Play a musician
+      description: |
+        Play a music
+      operationId: playMusic
+      tags:
+        - v1
+      requestBody:
+        description: Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Musician"
+      parameters:
+        - in: path
+          name: name
+          description: play a music
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Music being played
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: Music not found
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    InfoResponse:
+      required:
+        - body
+      properties:
+        body:
+          $ref: "#/components/schemas/Info"
+    Info:
+      required:
+        - versions
+        - build
+      properties:
+        versions:
+          type: array
+          items:
+            type: string
+          description: returns a list of supported protocol versions ( i.e. v1, v2 etc. )
+        build:
+          $ref: "#/components/schemas/BuildVersion"
+    BuildVersion:
+      required:
+        - major
+        - minor
+        - build_number
+        - commit_hash
+        - branch
+        - channel
+      properties:
+        major:
+          type: integer
+          description: Gorxestra's major version number
+        minor:
+          type: integer
+          description: Gorxestra's minor version number
+        build_number:
+          type: integer
+          description: Gorxestra's minor version number
+        commit_hash:
+          type: string
+          description: Hash of commit the build is based on
+        branch:
+          type: string
+          description: Branch the build is based on
+        channel:
+          type: string
+          description: Branch the build is based on
+    Error:
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+    Musician:
+      required:
+        - id
+        - address
+      properties:
+        id:
+          type: string
+          description: Id of the musician
+        address:
+          type: string
+          description: musician address

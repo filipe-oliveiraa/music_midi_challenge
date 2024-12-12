@@ -1,0 +1,12 @@
+package: server
+output: ./generated/server/server.go
+additional-imports:
+  # - package: crossjoin.com/gorxestra/daemon/conductord/api/server/v1/openapi/generated/model
+  #   alias: "."
+output-options:
+  include-tags:
+    - v1
+  skip-prune: true
+generate:
+  echo-server: true
+  embedded-spec: true

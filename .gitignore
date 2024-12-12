@@ -1,0 +1,4 @@
+build
+.dccache
+!zarf/cicd/*/build
+tmp

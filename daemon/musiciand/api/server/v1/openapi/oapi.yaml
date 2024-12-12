@@ -1,0 +1,218 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Broker Http Specification
+  description: Specification of the Conductor Http API
+paths:
+  /swagger:
+    get:
+      summary: Gets Swagger Spec
+      operationId: swagger
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+          content:
+            text/html:
+              schema:
+                type: string
+        default:
+          description: unexpected error
+          content:
+            text/html:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /health:
+    get:
+      summary: Verify Healthiness
+      operationId: health
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /startup:
+    get:
+      summary: Verify Startup
+      operationId: startup
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /ready:
+    get:
+      summary: Verify Readiness
+      operationId: ready
+      tags:
+        - common
+      responses:
+        "200":
+          description: Ok.
+        "500":
+          description: Internal Error.
+        "503":
+          description: Node not ready yet.
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /info:
+    get:
+      summary: Get Info
+      description: |
+        TODO
+      operationId: info
+      tags:
+        - common
+      responses:
+        "200":
+          description: info response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InfoResponse"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /metrics:
+    get:
+      summary: Return Metrics
+      description: |
+        Return Conductor metrics
+      operationId: metrics
+      tags:
+        - common
+      responses:
+        "200":
+          description: text with \#-comments and key:value lines
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: metrics were compiled out
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/play:
+    post:
+      summary: Play a note
+      description: |
+        Play a note
+      operationId: play
+      tags:
+        - v1
+      requestBody:
+        description: Request Body
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MusicNote"
+      responses:
+        "200":
+          description: text with \#-comments and key:value lines
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: metrics were compiled out
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Paseto
+  schemas:
+    InfoResponse:
+      required:
+        - body
+      properties:
+        body:
+          $ref: "#/components/schemas/Info"
+    Info:
+      required:
+        - versions
+        - build
+      properties:
+        versions:
+          type: array
+          items:
+            type: string
+          description: returns a list of supported protocol versions ( i.e. v1, v2 etc. )
+        build:
+          $ref: "#/components/schemas/BuildVersion"
+    BuildVersion:
+      required:
+        - major
+        - minor
+        - build_number
+        - commit_hash
+        - branch
+        - channel
+      properties:
+        major:
+          type: integer
+          description: Gorxestra's major version number
+        minor:
+          type: integer
+          description: Gorxestra's minor version number
+        build_number:
+          type: integer
+          description: Gorxestra's minor version number
+        commit_hash:
+          type: string
+          description: Hash of commit the build is based on
+        branch:
+          type: string
+          description: Branch the build is based on
+        channel:
+          type: string
+          description: Branch the build is based on
+    Error:
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+    MusicNote:
+      required:
+        - note
+      properties:
+        note:
+          type: string
+          description: base64 encoded note
