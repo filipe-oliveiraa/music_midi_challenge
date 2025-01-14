@@ -79,6 +79,12 @@ run: build
 
 	./launch.sh
 
+pause:
+	./control.sh pause
+
+resume:
+	./control.sh resume
+
 stop:
 	pkill -f "./build/" && \
 	rm -rf tmp
