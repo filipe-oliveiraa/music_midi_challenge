@@ -115,7 +115,7 @@ func (b *baton) play(r io.Reader) {
 		trackouts[i] = &Track{
 			ch:    channelMap[i],
 			index: i,
-			wg:    &wg,
+			//wg:    &wg,
 		}
 	}
 

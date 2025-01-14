@@ -77,7 +77,7 @@ func (m *MusicianNode) unregisterMusician() error {
 }
 
 func (m *MusicianNode) Start() error {
-	out, err := midi.OutPort(2) //midi.FindOutPort("qsynth")
+	out, err := midi.OutPort(1) //midi.FindOutPort("qsynth")
 	if err != nil {
 		return fmt.Errorf("could not open midi port:%w", err)
 	}

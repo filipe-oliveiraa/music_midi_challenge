@@ -33,7 +33,7 @@ func (t *Track) Open() error {
 }
 
 func (t *Track) Send(bs []byte) error {
-	t.wg.Add(1)
+	//t.wg.Add(1)
 	t.ch <- Note{
 		index: t.index,
 		note:  bs,
