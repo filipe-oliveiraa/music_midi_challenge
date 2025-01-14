@@ -1,9 +1,13 @@
 package baton
 
+import "sync"
+
 type Track struct {
 	ch    chan Note
 	index int
+	wg    *sync.WaitGroup
 }
+
 type Note struct {
 	index int
 	note  []byte
@@ -29,14 +33,11 @@ func (t *Track) Open() error {
 }
 
 func (t *Track) Send(bs []byte) error {
-	select {
-	case t.ch <- Note{
+	t.wg.Add(1)
+	t.ch <- Note{
 		index: t.index,
 		note:  bs,
-	}:
-	default:
 	}
-
 	return nil
 }
 
