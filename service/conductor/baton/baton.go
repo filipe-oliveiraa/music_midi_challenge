@@ -35,17 +35,17 @@ func New(log logging.Logger) Baton {
 		controlCh: make(chan string),
 	}
 
-	go b.handleSignals()
+	go b.handleSignals() // Start signal handler
 
 	return b
 }
 
 func (b *baton) handleSignals() {
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGUSR1, syscall.SIGUSR2)
+	signal.Notify(sigCh, syscall.SIGUSR1, syscall.SIGUSR2) // Register signals to be caught by the process
 
 	for {
-		sig := <-sigCh
+		sig := <-sigCh // Wait for signal to be caught
 		b.log.Infof("Received signal: %v", sig)
 		switch sig {
 		case syscall.SIGUSR1:
@@ -58,7 +58,7 @@ func (b *baton) handleSignals() {
 
 // Pauses the music
 func (b *baton) Pause() {
-	if b.playing.Load() {
+	if b.playing.Load() { //use atomic operation to check if music is playing
 		b.log.Info("Pausing music")
 		b.paused.Store(true)
 	}
