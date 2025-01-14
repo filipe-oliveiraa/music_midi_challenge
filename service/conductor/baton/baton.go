@@ -17,22 +17,24 @@ import (
 )
 
 type baton struct {
-	log       logging.Logger
-	mu        sync.Mutex
-	musicians []data.Musician
-	playing   atomic.Bool
-	paused    atomic.Bool
-	controlCh chan string
+	log             logging.Logger
+	mu              sync.Mutex
+	musicians       []data.Musician
+	playing         atomic.Bool
+	paused          atomic.Bool
+	play_pause_lock sync.Mutex
+	controlCh       chan string
 }
 
 func New(log logging.Logger) Baton {
 	b := &baton{
-		log:       log,
-		mu:        sync.Mutex{},
-		musicians: make([]data.Musician, 0, 100),
-		playing:   atomic.Bool{},
-		paused:    atomic.Bool{},
-		controlCh: make(chan string),
+		log:             log,
+		mu:              sync.Mutex{},
+		musicians:       make([]data.Musician, 0, 100),
+		playing:         atomic.Bool{},
+		paused:          atomic.Bool{},
+		play_pause_lock: sync.Mutex{},
+		controlCh:       make(chan string),
 	}
 
 	go b.handleSignals() // Start signal handler
@@ -58,6 +60,8 @@ func (b *baton) handleSignals() {
 
 // Pauses the music
 func (b *baton) Pause() {
+	b.play_pause_lock.Lock()
+	defer b.play_pause_lock.Unlock()
 	if b.playing.Load() { //use atomic operation to check if music is playing
 		b.log.Info("Pausing music")
 		b.paused.Store(true)
@@ -66,6 +70,8 @@ func (b *baton) Pause() {
 
 // Resumes the music
 func (b *baton) Resume() {
+	b.play_pause_lock.Lock()
+	defer b.play_pause_lock.Unlock()
 	if b.playing.Load() && b.paused.Load() {
 		b.log.Info("Resuming music")
 		b.paused.Store(false)
@@ -96,7 +102,11 @@ func (b *baton) Play(r io.Reader) error {
 }
 
 func (b *baton) play(r io.Reader) {
-	defer b.playing.Store(false)
+	defer func() {
+		b.play_pause_lock.Lock()
+		b.playing.Store(false)
+		b.play_pause_lock.Unlock()
+	}()
 
 	tracks := smf.ReadTracksFrom(r)
 	channelMap := make(map[int]chan Note) // map of channels for each musician
@@ -137,7 +147,14 @@ func (b *baton) handleMusician(index int, ch chan Note, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for note := range ch {
 		// Check if paused before sending the note
-		for b.paused.Load() {
+		for {
+			b.play_pause_lock.Lock()
+			if !b.paused.Load() {
+				b.play_pause_lock.Unlock()
+				break
+			}
+			b.play_pause_lock.Unlock()
+
 			b.log.Debug("Music is paused")
 			time.Sleep(100 * time.Millisecond) // Prevent consuming CPU
 		}

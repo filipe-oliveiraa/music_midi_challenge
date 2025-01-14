@@ -1,11 +1,8 @@
 package baton
 
-import "sync"
-
 type Track struct {
 	ch    chan Note
 	index int
-	wg    *sync.WaitGroup
 }
 
 type Note struct {
