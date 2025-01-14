@@ -52,67 +52,57 @@ func (b *baton) Play(r io.Reader) error {
 }
 
 func (b *baton) play(r io.Reader) {
-	// read and play it
-	tracks := smf.ReadTracksFrom(r)
-	// numTracks := len(tracks.SMF().Tracks)
+	defer b.playing.Store(false)
 
-	channel := make(chan Note)
+	tracks := smf.ReadTracksFrom(r)
+	channelMap := make(map[int]chan Note)
 	var wg sync.WaitGroup
 
+	// Initialize a channel for each musician
+	for i := range b.musicians {
+		channelMap[i] = make(chan Note)
+		wg.Add(1)
+		go b.handleMusician(i, channelMap[i], &wg)
+	}
+	// Initialize a track for each channel(each musician)
 	trackouts := make(map[int]drivers.Out)
 	for i := range tracks.SMF().Tracks {
 		trackouts[i] = &Track{
-			ch:    channel,
+			ch:    channelMap[i],
 			index: i,
 			wg:    &wg,
 		}
 	}
-
-	go func() {
-		for note := range channel {
-			if note.index >= len(b.musicians) {
-				b.log.
-					With("index", note.index).
-					With("musicians", len(b.musicians)).
-					Warn("skipping track")
-				wg.Done()
-				continue
-			}
-
-			go func(note Note) {
-				defer wg.Done()
-				cli, err := client.New(b.musicians[note.index].Address)
-				if err != nil {
-					b.log.
-						With("error", err).
-						Error("creating musician client")
-					return
-				}
-
-				b.log.With("note", note).Info("sending note")
-				if len(note.note) > 0 {
-					err = cli.Play(note.note)
-				}
-
-				if err != nil {
-					b.log.
-						With("error", err).
-						Error("playing note")
-				}
-			}(note)
-		}
-	}()
-
-	// play music
+	// Send notes to channels concurrently
 	tracks.Do(func(ev smf.TrackEvent) {
 		b.log.Infof("track %v @%vms %s\n", ev.TrackNo, ev.AbsMicroSeconds/1000, ev.Message)
 	}).MultiPlay(trackouts)
 
-	// close music channels
-	close(channel)
-
-	// wait for all notes to be played
+	// Close channels
+	for _, ch := range channelMap {
+		close(ch)
+	}
+	// Wait for all musicians to finish playing
 	wg.Wait()
+}
 
-	b.playing.Store(false)
+func (b *baton) handleMusician(index int, ch chan Note, wg *sync.WaitGroup) {
+	defer wg.Done()
+	// Read notes from channel
+	for note := range ch {
+		cli, err := client.New(b.musicians[index].Address)
+		if err != nil {
+			b.log.With("error", err).Error("creating musician client")
+			continue
+		}
+		// Send note to musician
+		b.log.With("note", note).Info("sending note")
+		if len(note.note) > 0 {
+			err = cli.Play(note.note)
+		}
+
+		if err != nil {
+			b.log.With("error", err).Error("playing note")
+		}
+	}
 }
