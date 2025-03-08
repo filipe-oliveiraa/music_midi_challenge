@@ -1,7 +1,6 @@
 # Distributed MIDI Music Player - Gorxestra
+_Note: The structure of the project and it´s code was all given. I was tasked with finding the problem that didn´t allow for music to play. Therefore i had to understand the structure of the project and it´s code in order to make the alterations that would guarantee music was correctly played._
 
-_Note: The structure of the project and it´s code was all given. I was tasked with finding the problem that didn´t allow for music to play. Therefore i had to understand the structure of the project and it´s code in order to make the alterations that would guarantee music was correctly played.
-_
 ## **Challenge Overview**
 
 In this challenge, it was provided with the source code for a distributed MIDI-based music player.  
